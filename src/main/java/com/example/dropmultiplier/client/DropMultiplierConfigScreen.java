@@ -52,6 +52,9 @@ public class DropMultiplierConfigScreen {
 
         private Tab activeTab = Tab.BLOCKS;
 
+        private int lastMouseX;
+        private int lastMouseY;
+
         private TextFieldWidget searchField;
         private ButtonWidget blocksTabButton;
         private ButtonWidget entitiesTabButton;
@@ -265,7 +268,8 @@ public class DropMultiplierConfigScreen {
 
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-            this.renderBackground(context, mouseX, mouseY, delta);
+            this.lastMouseX = mouseX;
+            this.lastMouseY = mouseY;
             super.render(context, mouseX, mouseY, delta);
 
             int margin = 16;
@@ -284,10 +288,12 @@ public class DropMultiplierConfigScreen {
 
         private final class RegistryListWidget extends AlwaysSelectedEntryListWidget<MultiplierEntry> {
             private final int x;
+            private final int topY;
 
             RegistryListWidget(MinecraftClient client, int x, int width, int height, int y, int itemHeight, ConfigScreen owner) {
                 super(client, width, height, y, itemHeight);
                 this.x = x;
+                this.topY = y;
             }
 
             void setEntries(List<EntryData> entries, Tab tab) {
@@ -304,6 +310,12 @@ public class DropMultiplierConfigScreen {
             }
 
             @Override
+            public boolean checkScrollbarDragged(Click click) {
+                return false;
+            }
+
+
+            @Override
             public int getRowWidth() {
                 return this.getWidth() - 12;
             }
@@ -316,6 +328,10 @@ public class DropMultiplierConfigScreen {
             @Override
             public int getRowRight() {
                 return this.getRowLeft() + getRowWidth();
+            }
+
+            int getTopY() {
+                return this.topY;
             }
         }
 
@@ -348,7 +364,7 @@ public class DropMultiplierConfigScreen {
                 }).dimensions(0, 0, 18, 18).build();
 
                 this.field = new TextFieldWidget(textRenderer, 0, 0, 34, 18, Text.literal(""));
-                this.field.setTextPredicate(text -> text.matches("d*"));
+                this.field.setTextPredicate(text -> text.matches("\\d*"));
                 this.field.setChangedListener(text -> {
                     if (text == null || text.isEmpty()) {
                         return;
@@ -379,38 +395,41 @@ public class DropMultiplierConfigScreen {
             }
 
             @Override
-            public void render(DrawContext context, int index, int y, int x, int rowWidth, int rowHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-                int rowLeft = listWidget.getRowLeft();
-                int rowRight = listWidget.getRowRight();
-                int iconX = rowLeft + 4;
-                int iconY = y + (rowHeight - ICON_SIZE) / 2;
+            public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+                int rowHeight = this.getHeight();
+                int y = this.getY();
 
-                context.drawItem(data.icon, iconX, iconY);
+                int rowLeft = this.getContentX();
+                int rowRight = this.getContentRightEnd();
+    int iconX = rowLeft + 4;
+    int iconY = y + (rowHeight - ICON_SIZE) / 2;
 
-                int textX = iconX + ICON_SIZE + 6;
-                int nameY = y + 6;
-                int idY = y + 18;
-                context.drawTextWithShadow(textRenderer, data.displayName, textX, nameY, 0xFFFFFF);
-                context.drawTextWithShadow(textRenderer, Text.literal(data.idString), textX, idY, 0xA0A0A0);
+    context.drawItem(data.icon, iconX, iconY);
 
-                int editorWidth = 96;
-                int editorX = rowRight - editorWidth;
-                int editorY = y + (rowHeight - 18) / 2;
+    int textX = iconX + ICON_SIZE + 6;
+    int nameY = y + 6;
+    int idY = y + 18;
+    context.drawTextWithShadow(textRenderer, data.displayName, textX, nameY, 0xFFFFFF);
+    context.drawTextWithShadow(textRenderer, Text.literal(data.id.toString()), textX, idY, 0xA0A0A0);
 
-                minusButton.setX(editorX);
-                minusButton.setY(editorY);
-                field.setX(editorX + 22);
-                field.setY(editorY);
-                plusButton.setX(editorX + 58);
-                plusButton.setY(editorY);
-                resetButton.setX(editorX + 80);
-                resetButton.setY(editorY);
+    int editorWidth = 98;
+    int editorX = rowRight - editorWidth - 8;
+    int editorY = y + (rowHeight - 18) / 2;
 
-                minusButton.render(context, mouseX, mouseY, tickDelta);
-                field.render(context, mouseX, mouseY, tickDelta);
-                plusButton.render(context, mouseX, mouseY, tickDelta);
-                resetButton.render(context, mouseX, mouseY, tickDelta);
-            }
+    minusButton.setX(editorX);
+    minusButton.setY(editorY);
+    field.setX(editorX + 22);
+    field.setY(editorY);
+    plusButton.setX(editorX + 58);
+    plusButton.setY(editorY);
+    resetButton.setX(editorX + 80);
+    resetButton.setY(editorY);
+
+    minusButton.render(context, mouseX, mouseY, tickDelta);
+    field.render(context, mouseX, mouseY, tickDelta);
+    plusButton.render(context, mouseX, mouseY, tickDelta);
+    resetButton.render(context, mouseX, mouseY, tickDelta);
+}
 
             @Override
             public boolean mouseClicked(Click click, boolean doubled) {
@@ -423,7 +442,10 @@ public class DropMultiplierConfigScreen {
                 if (plusButton.mouseClicked(click, doubled)) {
                     return true;
                 }
-                return resetButton.mouseClicked(click, doubled);
+                if (resetButton.mouseClicked(click, doubled)) {
+                    return true;
+                }
+                return true;
             }
 
             @Override
