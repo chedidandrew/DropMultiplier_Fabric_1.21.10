@@ -83,8 +83,7 @@ public class DropMultiplierConfigScreen {
 
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-            this.renderBackground(context, mouseX, mouseY, delta);
-
+            
             int contentWidth = Math.min(420, this.width - 40);
             int x = (this.width - contentWidth) / 2;
             int y = 56;
@@ -276,7 +275,6 @@ public class DropMultiplierConfigScreen {
 
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-            this.renderBackground(context, mouseX, mouseY, delta);
 
             int contentWidth = Math.min(520, this.width - 40);
             int x = (this.width - contentWidth) / 2;
