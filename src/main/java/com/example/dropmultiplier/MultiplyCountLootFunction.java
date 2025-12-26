@@ -6,7 +6,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.loot.condition.LootCondition;
 import net.minecraft.loot.context.LootContext;
 import net.minecraft.loot.function.ConditionalLootFunction;
-import net.minecraft.loot.function.LootFunction;
 import net.minecraft.loot.function.LootFunctionType;
 
 import java.util.List;
@@ -52,7 +51,7 @@ public class MultiplyCountLootFunction extends ConditionalLootFunction {
     }
 
     @Override
-    public LootFunctionType<? extends LootFunction> getType() {
+    public LootFunctionType<? extends ConditionalLootFunction> getType() {
         return DropMultiplierMod.MULTIPLY_COUNT_FUNCTION_TYPE;
     }
 }

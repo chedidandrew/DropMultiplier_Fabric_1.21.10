@@ -21,7 +21,7 @@ public class DropMultiplierMod implements ModInitializer {
 
         MULTIPLY_COUNT_FUNCTION_TYPE = Registry.register(
                 Registries.LOOT_FUNCTION_TYPE,
-                new Identifier(MOD_ID, "multiply_count"),
+                Identifier.of(MOD_ID, "multiply_count"),
                 new LootFunctionType<>(MultiplyCountLootFunction.CODEC)
         );
 
