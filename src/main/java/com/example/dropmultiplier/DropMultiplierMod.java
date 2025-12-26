@@ -4,10 +4,12 @@ import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.loot.v3.LootTableEvents;
 import net.fabricmc.fabric.api.loot.v3.FabricLootTableBuilder;
+import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
 import net.minecraft.loot.function.LootFunctionType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
+import net.minecraft.server.world.ServerWorld;
 
 public class DropMultiplierMod implements ModInitializer {
     public static final String MOD_ID = "dropmultiplier";
@@ -36,6 +38,12 @@ public class DropMultiplierMod implements ModInitializer {
             ((FabricLootTableBuilder) tableBuilder).modifyPools(poolBuilder -> {
                 poolBuilder.apply(MultiplyCountLootFunction.builder());
             });
+        });
+
+        PlayerBlockBreakEvents.AFTER.register((world, player, pos, state, blockEntity) -> {
+            if (world instanceof ServerWorld serverWorld) {
+                PlacedBlockTracker.get(serverWorld).clearPlaced(serverWorld, pos);
+            }
         });
 
         CommandRegistrationCallback.EVENT.register((dispatcher, registryAccess, environment) -> {
