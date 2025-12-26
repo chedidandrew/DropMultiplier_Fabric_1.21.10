@@ -22,7 +22,7 @@ Built jar: `build/libs/dropmultiplier-1.0.0.jar`
 
 This mod exposes a config screen in Mod Menu when Mod Menu is installed.
 
-Config screen requires Cloth Config API.
+Config screen is available via Mod Menu (optional).
 
 ## Config
 File is created on first run:
