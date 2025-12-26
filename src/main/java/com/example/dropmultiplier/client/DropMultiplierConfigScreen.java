@@ -5,7 +5,10 @@ import com.example.dropmultiplier.DropMultiplierMod;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.client.gui.DrawContext;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
@@ -80,7 +83,7 @@ public class DropMultiplierConfigScreen {
 
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-            this.renderBackground(context);
+            this.renderBackground(context, mouseX, mouseY, delta);
 
             int contentWidth = Math.min(420, this.width - 40);
             int x = (this.width - contentWidth) / 2;
@@ -103,19 +106,19 @@ public class DropMultiplierConfigScreen {
         }
 
         @Override
-        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        public boolean keyPressed(KeyInput input) {
             if (this.defaultMultiplierField != null && this.defaultMultiplierField.isFocused()) {
-                return this.defaultMultiplierField.keyPressed(keyCode, scanCode, modifiers) || super.keyPressed(keyCode, scanCode, modifiers);
+                return this.defaultMultiplierField.keyPressed(input) || super.keyPressed(input);
             }
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(input);
         }
 
         @Override
-        public boolean charTyped(char chr, int modifiers) {
+        public boolean charTyped(CharInput input) {
             if (this.defaultMultiplierField != null && this.defaultMultiplierField.isFocused()) {
-                return this.defaultMultiplierField.charTyped(chr, modifiers);
+                return this.defaultMultiplierField.charTyped(input);
             }
-            return super.charTyped(chr, modifiers);
+            return super.charTyped(input);
         }
     }
 
@@ -273,7 +276,7 @@ public class DropMultiplierConfigScreen {
 
         @Override
         public void render(DrawContext context, int mouseX, int mouseY, float delta) {
-            this.renderBackground(context);
+            this.renderBackground(context, mouseX, mouseY, delta);
 
             int contentWidth = Math.min(520, this.width - 40);
             int x = (this.width - contentWidth) / 2;
@@ -300,32 +303,32 @@ public class DropMultiplierConfigScreen {
         }
 
         @Override
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            boolean handled = super.mouseClicked(mouseX, mouseY, button);
+        public boolean mouseClicked(Click click, boolean doubled) {
+            boolean handled = super.mouseClicked(click, doubled);
             updateButtonsAndFields();
             return handled;
         }
 
         @Override
-        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        public boolean keyPressed(KeyInput input) {
             if (this.searchField != null && this.searchField.isFocused()) {
-                return this.searchField.keyPressed(keyCode, scanCode, modifiers) || super.keyPressed(keyCode, scanCode, modifiers);
+                return this.searchField.keyPressed(input) || super.keyPressed(input);
             }
             if (this.multiplierField != null && this.multiplierField.isFocused()) {
-                return this.multiplierField.keyPressed(keyCode, scanCode, modifiers) || super.keyPressed(keyCode, scanCode, modifiers);
+                return this.multiplierField.keyPressed(input) || super.keyPressed(input);
             }
-            return super.keyPressed(keyCode, scanCode, modifiers);
+            return super.keyPressed(input);
         }
 
         @Override
-        public boolean charTyped(char chr, int modifiers) {
+        public boolean charTyped(CharInput input) {
             if (this.searchField != null && this.searchField.isFocused()) {
-                return this.searchField.charTyped(chr, modifiers);
+                return this.searchField.charTyped(input);
             }
             if (this.multiplierField != null && this.multiplierField.isFocused()) {
-                return this.multiplierField.charTyped(chr, modifiers);
+                return this.multiplierField.charTyped(input);
             }
-            return super.charTyped(chr, modifiers);
+            return super.charTyped(input);
         }
     }
 
@@ -344,7 +347,7 @@ public class DropMultiplierConfigScreen {
             }
 
             if (this.getEntryCount() > 0 && this.getSelectedOrNull() == null) {
-                this.setSelected(this.getEntry(0));
+                this.setSelected(this.children().get(0));
                 this.owner.onSelectionChanged();
             }
 
@@ -378,13 +381,13 @@ public class DropMultiplierConfigScreen {
             }
 
             @Override
-            public void render(DrawContext context, int index, int y, int x, int entryWidth, int entryHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+            public void render(DrawContext context, int mouseX, int mouseY, boolean hovered, float tickDelta) {
                 String s = this.id.toString();
-                context.drawTextWithShadow(this.list.client.textRenderer, s, x + 2, y + 6, 0xFFFFFF);
+                context.drawTextWithShadow(this.list.client.textRenderer, s, 2, 6, 0xFFFFFF);
             }
 
             @Override
-            public boolean mouseClicked(double mouseX, double mouseY, int button) {
+            public boolean mouseClicked(Click click, boolean doubled) {
                 this.list.setSelected(this);
                 this.owner.onSelectionChanged();
                 return true;

@@ -52,7 +52,7 @@ public class MultiplyCountLootFunction extends ConditionalLootFunction {
     }
 
     @Override
-    public LootFunctionType<? extends LootFunction> getType() {
+    public LootFunctionType<? extends ConditionalLootFunction> getType() {
         return DropMultiplierMod.MULTIPLY_COUNT_FUNCTION_TYPE;
     }
 }

@@ -58,14 +58,22 @@ public class DropMultiplierConfig {
     }
 
     public int getMultiplierForLootContext(LootContext context) {
-        BlockState state = context.getNullable(LootContextParameters.BLOCK_STATE);
+        BlockState state = null;
+        try {
+            state = context.getOrThrow(LootContextParameters.BLOCK_STATE);
+        } catch (Exception ignored) {
+        }
         if (state != null) {
             Identifier blockId = Registries.BLOCK.getId(state.getBlock());
             Integer v = blockMultipliers.get(blockId.toString());
             return v != null ? v : defaultMultiplier;
         }
 
-        Entity entity = context.getNullable(LootContextParameters.THIS_ENTITY);
+        Entity entity = null;
+        try {
+            entity = context.getOrThrow(LootContextParameters.THIS_ENTITY);
+        } catch (Exception ignored) {
+        }
         if (entity != null) {
             Identifier entityId = Registries.ENTITY_TYPE.getId(entity.getType());
             Integer v = entityMultipliers.get(entityId.toString());
