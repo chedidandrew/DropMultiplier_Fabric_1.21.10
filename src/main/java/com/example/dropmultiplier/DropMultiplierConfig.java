@@ -21,9 +21,11 @@ public class DropMultiplierConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final String FILE_NAME = "dropmultiplier.json";
 
-    public int defaultMultiplier = 2;
     public Map<String, Integer> blockMultipliers = new HashMap<>();
     public Map<String, Integer> entityMultipliers = new HashMap<>();
+
+    public static final int MIN_MULTIPLIER = 1;
+    public static final int MAX_MULTIPLIER = 64;
 
     public static DropMultiplierConfig load() {
         Path path = getPath();
@@ -59,40 +61,48 @@ public class DropMultiplierConfig {
 
     public int getMultiplierForLootContext(LootContext context) {
         BlockState state = null;
-        try {
-            state = context.getOrThrow(LootContextParameters.BLOCK_STATE);
-        } catch (Exception ignored) {
-        }
+        state = context.get(LootContextParameters.BLOCK_STATE);
         if (state != null) {
             Identifier blockId = Registries.BLOCK.getId(state.getBlock());
-            Integer v = blockMultipliers.get(blockId.toString());
-            return v != null ? v : defaultMultiplier;
+            return getBlockMultiplier(blockId);
         }
 
         Entity entity = null;
-        try {
-            entity = context.getOrThrow(LootContextParameters.THIS_ENTITY);
-        } catch (Exception ignored) {
-        }
+        entity = context.get(LootContextParameters.THIS_ENTITY);
         if (entity != null) {
             Identifier entityId = Registries.ENTITY_TYPE.getId(entity.getType());
-            Integer v = entityMultipliers.get(entityId.toString());
-            return v != null ? v : defaultMultiplier;
+            return getEntityMultiplier(entityId);
         }
 
-        return defaultMultiplier;
+        return MIN_MULTIPLIER;
     }
 
-    public void setDefaultMultiplier(int multiplier) {
-        defaultMultiplier = Math.max(0, multiplier);
+    public int getBlockMultiplier(Identifier blockId) {
+        Integer v = blockMultipliers.get(blockId.toString());
+        return v != null ? v : MIN_MULTIPLIER;
+    }
+
+    public int getEntityMultiplier(Identifier entityId) {
+        Integer v = entityMultipliers.get(entityId.toString());
+        return v != null ? v : MIN_MULTIPLIER;
     }
 
     public void setBlockMultiplier(Identifier blockId, int multiplier) {
-        blockMultipliers.put(blockId.toString(), Math.max(0, multiplier));
+        int clamped = clampMultiplier(multiplier);
+        if (clamped == MIN_MULTIPLIER) {
+            blockMultipliers.remove(blockId.toString());
+        } else {
+            blockMultipliers.put(blockId.toString(), clamped);
+        }
     }
 
     public void setEntityMultiplier(Identifier entityId, int multiplier) {
-        entityMultipliers.put(entityId.toString(), Math.max(0, multiplier));
+        int clamped = clampMultiplier(multiplier);
+        if (clamped == MIN_MULTIPLIER) {
+            entityMultipliers.remove(entityId.toString());
+        } else {
+            entityMultipliers.put(entityId.toString(), clamped);
+        }
     }
 
     public void removeBlockMultiplier(Identifier blockId) {
@@ -104,12 +114,37 @@ public class DropMultiplierConfig {
     }
 
     private void sanitize() {
-        if (defaultMultiplier < 0) defaultMultiplier = 0;
         if (blockMultipliers == null) blockMultipliers = new HashMap<>();
         if (entityMultipliers == null) entityMultipliers = new HashMap<>();
+        sanitizeMap(blockMultipliers);
+        sanitizeMap(entityMultipliers);
     }
 
     private static Path getPath() {
         return FabricLoader.getInstance().getConfigDir().resolve(FILE_NAME);
+    }
+
+    private static int clampMultiplier(int value) {
+        if (value < MIN_MULTIPLIER) {
+            return MIN_MULTIPLIER;
+        }
+        return Math.min(value, MAX_MULTIPLIER);
+    }
+
+    private static void sanitizeMap(Map<String, Integer> map) {
+        map.entrySet().removeIf(entry -> {
+            Integer value = entry.getValue();
+            if (value == null) {
+                return true;
+            }
+            int clamped = clampMultiplier(value);
+            if (clamped == MIN_MULTIPLIER) {
+                return true;
+            }
+            if (clamped != value) {
+                entry.setValue(clamped);
+            }
+            return false;
+        });
     }
 }

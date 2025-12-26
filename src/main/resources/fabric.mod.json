@@ -21,6 +21,9 @@
       "com.example.dropmultiplier.client.DropMultiplierModMenuIntegration"
     ]
   },
+  "mixins": [
+    "dropmultiplier.mixins.json"
+  ],
   "depends": {
     "fabricloader": ">=0.18.0",
     "fabric-api": "*",

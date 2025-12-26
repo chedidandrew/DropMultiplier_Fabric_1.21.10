@@ -20,18 +20,9 @@ public class DropMultiplierCommands {
                             return 1;
                         }))
                 .then(CommandManager.literal("set")
-                        .then(CommandManager.literal("default")
-                                .then(CommandManager.argument("multiplier", IntegerArgumentType.integer(0, 1000000))
-                                        .executes(ctx -> {
-                                            int m = IntegerArgumentType.getInteger(ctx, "multiplier");
-                                            DropMultiplierMod.CONFIG.setDefaultMultiplier(m);
-                                            DropMultiplierMod.CONFIG.save();
-                                            ctx.getSource().sendFeedback(() -> Text.literal("Default multiplier set to " + m + "x."), false);
-                                            return 1;
-                                        })))
                         .then(CommandManager.literal("block")
                                 .then(CommandManager.argument("block_id", IdentifierArgumentType.identifier())
-                                        .then(CommandManager.argument("multiplier", IntegerArgumentType.integer(0, 1000000))
+                                        .then(CommandManager.argument("multiplier", IntegerArgumentType.integer(DropMultiplierConfig.MIN_MULTIPLIER, DropMultiplierConfig.MAX_MULTIPLIER))
                                                 .executes(ctx -> {
                                                     Identifier id = IdentifierArgumentType.getIdentifier(ctx, "block_id");
                                                     int m = IntegerArgumentType.getInteger(ctx, "multiplier");
@@ -48,7 +39,7 @@ public class DropMultiplierCommands {
                                                 }))))
                         .then(CommandManager.literal("entity")
                                 .then(CommandManager.argument("entity_id", IdentifierArgumentType.identifier())
-                                        .then(CommandManager.argument("multiplier", IntegerArgumentType.integer(0, 1000000))
+                                        .then(CommandManager.argument("multiplier", IntegerArgumentType.integer(DropMultiplierConfig.MIN_MULTIPLIER, DropMultiplierConfig.MAX_MULTIPLIER))
                                                 .executes(ctx -> {
                                                     Identifier id = IdentifierArgumentType.getIdentifier(ctx, "entity_id");
                                                     int m = IntegerArgumentType.getInteger(ctx, "multiplier");
@@ -58,11 +49,11 @@ public class DropMultiplierCommands {
                                                         return 0;
                                                     }
 
-                                                    DropMultiplierMod.CONFIG.setEntityMultiplier(id, m);
-                                                    DropMultiplierMod.CONFIG.save();
-                                                    ctx.getSource().sendFeedback(() -> Text.literal("Entity multiplier for " + id + " set to " + m + "x."), false);
-                                                    return 1;
-                                                })))))
+                                            DropMultiplierMod.CONFIG.setEntityMultiplier(id, m);
+                                            DropMultiplierMod.CONFIG.save();
+                                            ctx.getSource().sendFeedback(() -> Text.literal("Entity multiplier for " + id + " set to " + m + "x."), false);
+                                            return 1;
+                                        })))))
                 .then(CommandManager.literal("remove")
                         .then(CommandManager.literal("block")
                                 .then(CommandManager.argument("block_id", IdentifierArgumentType.identifier())
