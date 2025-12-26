@@ -3,15 +3,16 @@ package com.example.dropmultiplier;
 import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+import net.minecraft.datafixer.DataFixTypes;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.server.world.ServerWorld;
-import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.world.PersistentState;
+import net.minecraft.world.PersistentState.Type;
 
 public class PlacedBlockTracker extends PersistentState {
     private static final String STORAGE_KEY = "dropmultiplier_placed_blocks";
@@ -77,7 +78,7 @@ public class PlacedBlockTracker extends PersistentState {
         PlacedBlockTracker tracker = new PlacedBlockTracker();
         NbtList chunks = nbt.getList(CHUNKS_KEY, NbtElement.COMPOUND_TYPE);
         for (int i = 0; i < chunks.size(); i++) {
-            NbtCompound chunkTag = chunks.getCompound(i);
+            NbtCompound chunkTag = chunks.getCompound(i).orElse(new NbtCompound());
             long chunkKey = chunkTag.getLong(CHUNK_POS_KEY);
             int[] positions = chunkTag.getIntArray(POSITIONS_KEY);
             if (positions.length == 0) {

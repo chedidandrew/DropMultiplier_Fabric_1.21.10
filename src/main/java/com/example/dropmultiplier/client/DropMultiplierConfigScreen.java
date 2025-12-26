@@ -6,12 +6,15 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.block.Block;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.gui.Click;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ConfirmScreen;
 import net.minecraft.client.gui.screen.Screen;
 import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
 import net.minecraft.client.gui.widget.ButtonWidget;
 import net.minecraft.client.gui.widget.TextFieldWidget;
+import net.minecraft.client.input.CharInput;
+import net.minecraft.client.input.KeyInput;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -210,7 +213,10 @@ public class DropMultiplierConfigScreen {
             List<EntryData> entries = new ArrayList<>();
             for (Identifier id : Registries.ENTITY_TYPE.getIds()) {
                 Identifier spawnEggId = Identifier.of(id.getNamespace(), id.getPath() + "_spawn_egg");
-                Item spawnEgg = Registries.ITEM.getOptional(spawnEggId).orElse(Items.SPAWNER);
+                Item spawnEgg = Registries.ITEM.get(spawnEggId);
+                if (spawnEgg == Items.AIR) {
+                    spawnEgg = Items.SPAWNER;
+                }
                 ItemStack stack = new ItemStack(spawnEgg);
                 entries.add(new EntryData(id, Registries.ENTITY_TYPE.get(id).getName(), stack));
             }
@@ -282,8 +288,6 @@ public class DropMultiplierConfigScreen {
             RegistryListWidget(MinecraftClient client, int x, int width, int height, int y, int itemHeight, ConfigScreen owner) {
                 super(client, width, height, y, itemHeight);
                 this.x = x;
-                this.setRenderHeader(false, 0);
-                this.setRenderBackground(false);
             }
 
             void setEntries(List<EntryData> entries, Tab tab) {
@@ -304,139 +308,141 @@ public class DropMultiplierConfigScreen {
                 return this.getWidth() - 12;
             }
 
-            private int getRowLeft() {
+            @Override
+            public int getRowLeft() {
                 return this.x + 6;
             }
 
-            private int getRowRight() {
+            @Override
+            public int getRowRight() {
                 return this.getRowLeft() + getRowWidth();
             }
+        }
 
-            private final class MultiplierEntry extends AlwaysSelectedEntryListWidget.Entry<MultiplierEntry> {
-                private final EntryData data;
-                private final Tab tab;
-                private final ButtonWidget minusButton;
-                private final ButtonWidget plusButton;
-                private final ButtonWidget resetButton;
-                private final TextFieldWidget field;
+        private final class MultiplierEntry extends AlwaysSelectedEntryListWidget.Entry<MultiplierEntry> {
+            private final EntryData data;
+            private final Tab tab;
+            private final ButtonWidget minusButton;
+            private final ButtonWidget plusButton;
+            private final ButtonWidget resetButton;
+            private final TextFieldWidget field;
 
-                private MultiplierEntry(EntryData data, Tab tab) {
-                    this.data = data;
-                    this.tab = tab;
-                    this.minusButton = ButtonWidget.builder(Text.literal("-"), button -> {
-                        int current = getMultiplier(tab, data.id);
-                        setMultiplier(tab, data.id, current - 1);
-                        syncField();
-                    }).dimensions(0, 0, 20, 18).build();
-
-                    this.plusButton = ButtonWidget.builder(Text.literal("+"), button -> {
-                        int current = getMultiplier(tab, data.id);
-                        setMultiplier(tab, data.id, current + 1);
-                        syncField();
-                    }).dimensions(0, 0, 20, 18).build();
-
-                    this.resetButton = ButtonWidget.builder(Text.literal("↺"), button -> {
-                        setMultiplier(tab, data.id, MIN_MULTIPLIER);
-                        syncField();
-                    }).dimensions(0, 0, 18, 18).build();
-
-                    this.field = new TextFieldWidget(textRenderer, 0, 0, 34, 18, Text.literal(""));
-                    this.field.setTextPredicate(text -> text.matches("\\d*"));
-                    this.field.setChangedListener(text -> {
-                        if (text == null || text.isEmpty()) {
-                            return;
-                        }
-                        int parsed;
-                        try {
-                            parsed = Integer.parseInt(text);
-                        } catch (NumberFormatException e) {
-                            return;
-                        }
-                        setMultiplier(tab, data.id, parsed);
-                        syncField();
-                    });
+            private MultiplierEntry(EntryData data, Tab tab) {
+                this.data = data;
+                this.tab = tab;
+                this.minusButton = ButtonWidget.builder(Text.literal("-"), button -> {
+                    int current = getMultiplier(tab, data.id);
+                    setMultiplier(tab, data.id, current - 1);
                     syncField();
-                }
+                }).dimensions(0, 0, 20, 18).build();
 
-                private void syncField() {
-                    int value = getMultiplier(tab, data.id);
-                    String text = Integer.toString(value);
-                    if (!text.equals(field.getText())) {
-                        field.setText(text);
+                this.plusButton = ButtonWidget.builder(Text.literal("+"), button -> {
+                    int current = getMultiplier(tab, data.id);
+                    setMultiplier(tab, data.id, current + 1);
+                    syncField();
+                }).dimensions(0, 0, 20, 18).build();
+
+                this.resetButton = ButtonWidget.builder(Text.literal("↺"), button -> {
+                    setMultiplier(tab, data.id, MIN_MULTIPLIER);
+                    syncField();
+                }).dimensions(0, 0, 18, 18).build();
+
+                this.field = new TextFieldWidget(textRenderer, 0, 0, 34, 18, Text.literal(""));
+                this.field.setTextPredicate(text -> text.matches("d*"));
+                this.field.setChangedListener(text -> {
+                    if (text == null || text.isEmpty()) {
+                        return;
                     }
-                }
-
-                @Override
-                public Text getNarration() {
-                    return Text.literal(data.id.toString());
-                }
-
-                @Override
-                public void render(DrawContext context, int index, int y, int x, int rowWidth, int rowHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
-                    int rowLeft = getRowLeft();
-                    int rowRight = getRowRight();
-                    int iconX = rowLeft + 4;
-                    int iconY = y + (rowHeight - ICON_SIZE) / 2;
-
-                    context.drawItem(data.icon, iconX, iconY);
-
-                    int textX = iconX + ICON_SIZE + 6;
-                    int nameY = y + 6;
-                    int idY = y + 18;
-                    context.drawTextWithShadow(textRenderer, data.displayName, textX, nameY, 0xFFFFFF);
-                    context.drawTextWithShadow(textRenderer, Text.literal(data.idString), textX, idY, 0xA0A0A0);
-
-                    int editorWidth = 96;
-                    int editorX = rowRight - editorWidth;
-                    int editorY = y + (rowHeight - 18) / 2;
-
-                    minusButton.setX(editorX);
-                    minusButton.setY(editorY);
-                    field.setX(editorX + 22);
-                    field.setY(editorY);
-                    plusButton.setX(editorX + 58);
-                    plusButton.setY(editorY);
-                    resetButton.setX(editorX + 80);
-                    resetButton.setY(editorY);
-
-                    minusButton.render(context, mouseX, mouseY, tickDelta);
-                    field.render(context, mouseX, mouseY, tickDelta);
-                    plusButton.render(context, mouseX, mouseY, tickDelta);
-                    resetButton.render(context, mouseX, mouseY, tickDelta);
-                }
-
-                @Override
-                public boolean mouseClicked(double mouseX, double mouseY, int button) {
-                    if (minusButton.mouseClicked(mouseX, mouseY, button)) {
-                        return true;
+                    int parsed;
+                    try {
+                        parsed = Integer.parseInt(text);
+                    } catch (NumberFormatException e) {
+                        return;
                     }
-                    if (field.mouseClicked(mouseX, mouseY, button)) {
-                        return true;
-                    }
-                    if (plusButton.mouseClicked(mouseX, mouseY, button)) {
-                        return true;
-                    }
-                    return resetButton.mouseClicked(mouseX, mouseY, button);
-                }
+                    setMultiplier(tab, data.id, parsed);
+                    syncField();
+                });
+                syncField();
+            }
 
-                @Override
-                public boolean mouseReleased(double mouseX, double mouseY, int button) {
-                    minusButton.mouseReleased(mouseX, mouseY, button);
-                    field.mouseReleased(mouseX, mouseY, button);
-                    plusButton.mouseReleased(mouseX, mouseY, button);
-                    resetButton.mouseReleased(mouseX, mouseY, button);
-                    return false;
+            private void syncField() {
+                int value = getMultiplier(tab, data.id);
+                String text = Integer.toString(value);
+                if (!text.equals(field.getText())) {
+                    field.setText(text);
                 }
+            }
 
-                @Override
-                public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-                    return field.keyPressed(keyCode, scanCode, modifiers);
-                }
+            @Override
+            public Text getNarration() {
+                return Text.literal(data.id.toString());
+            }
 
-                @Override
-                public boolean charTyped(char chr, int modifiers) {
-                    return field.charTyped(chr, modifiers);
+            @Override
+            public void render(DrawContext context, int index, int y, int x, int rowWidth, int rowHeight, int mouseX, int mouseY, boolean hovered, float tickDelta) {
+                int rowLeft = listWidget.getRowLeft();
+                int rowRight = listWidget.getRowRight();
+                int iconX = rowLeft + 4;
+                int iconY = y + (rowHeight - ICON_SIZE) / 2;
+
+                context.drawItem(data.icon, iconX, iconY);
+
+                int textX = iconX + ICON_SIZE + 6;
+                int nameY = y + 6;
+                int idY = y + 18;
+                context.drawTextWithShadow(textRenderer, data.displayName, textX, nameY, 0xFFFFFF);
+                context.drawTextWithShadow(textRenderer, Text.literal(data.idString), textX, idY, 0xA0A0A0);
+
+                int editorWidth = 96;
+                int editorX = rowRight - editorWidth;
+                int editorY = y + (rowHeight - 18) / 2;
+
+                minusButton.setX(editorX);
+                minusButton.setY(editorY);
+                field.setX(editorX + 22);
+                field.setY(editorY);
+                plusButton.setX(editorX + 58);
+                plusButton.setY(editorY);
+                resetButton.setX(editorX + 80);
+                resetButton.setY(editorY);
+
+                minusButton.render(context, mouseX, mouseY, tickDelta);
+                field.render(context, mouseX, mouseY, tickDelta);
+                plusButton.render(context, mouseX, mouseY, tickDelta);
+                resetButton.render(context, mouseX, mouseY, tickDelta);
+            }
+
+            @Override
+            public boolean mouseClicked(Click click, boolean doubled) {
+                if (minusButton.mouseClicked(click, doubled)) {
+                    return true;
                 }
+                if (field.mouseClicked(click, doubled)) {
+                    return true;
+                }
+                if (plusButton.mouseClicked(click, doubled)) {
+                    return true;
+                }
+                return resetButton.mouseClicked(click, doubled);
+            }
+
+            @Override
+            public boolean mouseReleased(Click click) {
+                minusButton.mouseReleased(click);
+                field.mouseReleased(click);
+                plusButton.mouseReleased(click);
+                resetButton.mouseReleased(click);
+                return false;
+            }
+
+            @Override
+            public boolean keyPressed(KeyInput input) {
+                return field.keyPressed(input);
+            }
+
+            @Override
+            public boolean charTyped(CharInput input) {
+                return field.charTyped(input);
             }
         }
     }
